@@ -20,8 +20,8 @@ Jalankan seeder terlebih dahulu (`php artisan db:seed`), kemudian gunakan kreden
 
 | Komponen   | Versi          |
 |------------|----------------|
-| PHP        | ^8.1           |
-| Laravel    | ^10.10         |
+| PHP        | ^8.2           |
+| Laravel    | ^11.0          |
 | MySQL      | 8.0+           |
 | Composer   | 2.x            |
 | Node.js    | (opsional, Tailwind via CDN) |
@@ -32,7 +32,7 @@ Jalankan seeder terlebih dahulu (`php artisan db:seed`), kemudian gunakan kreden
 
 | Library              | Versi   | Fungsi                              |
 |----------------------|---------|-------------------------------------|
-| Laravel Framework    | ^10.10  | Backend MVC utama                   |
+| Laravel Framework    | ^11.0   | Backend MVC utama                   |
 | Maatwebsite/Excel    | 3.1.58  | Export laporan ke file Excel (.xlsx)|
 | Tailwind CSS         | CDN     | Styling antarmuka (utility-first)   |
 | SweetAlert2          | CDN v11 | Modal konfirmasi hapus data         |
