@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateVehicleServiceRequest;
 use App\Models\Vehicle;
 use App\Models\VehicleService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class VehicleServiceController extends Controller
@@ -21,6 +22,31 @@ class VehicleServiceController extends Controller
             ->paginate(15);
 
         return view('vehicle-services.index', compact('vehicle', 'services'));
+    }
+
+    /**
+     * Global summary of all service records across all vehicles (accessible from navbar).
+     */
+    public function allServices(Request $request): View
+    {
+        $query = VehicleService::with('vehicle')
+            ->orderBy('tanggal_service', 'desc');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('deskripsi', 'like', "%{$search}%")
+                  ->orWhereHas('vehicle', fn($v) => $v->where('plat_nomor', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($platNomor = $request->input('plat_nomor')) {
+            $query->whereHas('vehicle', fn($v) => $v->where('plat_nomor', $platNomor));
+        }
+
+        $services  = $query->paginate(20)->withQueryString();
+        $vehicles  = Vehicle::orderBy('plat_nomor')->pluck('plat_nomor', 'plat_nomor');
+
+        return view('vehicle-services.all', compact('services', 'vehicles'));
     }
 
     /**

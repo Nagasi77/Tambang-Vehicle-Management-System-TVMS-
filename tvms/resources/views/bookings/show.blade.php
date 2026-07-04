@@ -28,7 +28,7 @@
 
             @if (in_array($booking->status_pembokingan, ['pending', 'disetujui_level_1']))
                 <form method="POST" action="{{ route('bookings.cancel', $booking) }}"
-                      onsubmit="return confirm('Yakin ingin membatalkan booking #{{ $booking->id }}?')">
+                      data-confirm-delete="Booking #{{ $booking->id }}">
                     @csrf
                     <button type="submit"
                             class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors">
@@ -188,7 +188,11 @@
                             </span>
                         @endif
                     </div>
-
+                    @if ($approval1 && $approval1->status !== 'pending')
+                        <p class="mt-1 text-xs text-gray-400">
+                            Diproses pada: {{ $approval1->updated_at?->format('d F Y, H:i') ?? '—' }}
+                        </p>
+                    @endif
                     @if ($approval1?->status === 'ditolak' && $approval1->catatan)
                         <p class="mt-1.5 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
                             <span class="font-medium">Catatan:</span> {{ $approval1->catatan }}
@@ -248,7 +252,11 @@
                             </span>
                         @endif
                     </div>
-
+                    @if ($approval2 && $approval2->status !== 'pending')
+                        <p class="mt-1 text-xs text-gray-400">
+                            Diproses pada: {{ $approval2->updated_at?->format('d F Y, H:i') ?? '—' }}
+                        </p>
+                    @endif
                     @if ($approval2?->status === 'ditolak' && $approval2->catatan)
                         <p class="mt-1.5 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
                             <span class="font-medium">Catatan:</span> {{ $approval2->catatan }}

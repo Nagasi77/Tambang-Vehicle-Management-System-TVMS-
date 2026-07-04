@@ -156,6 +156,11 @@
                             </span>
                         @endif
                     </div>
+                    @if ($approval1 && $approval1->status !== 'pending')
+                        <p class="mt-1 text-xs text-gray-400">
+                            Diproses pada: {{ $approval1->updated_at?->format('d F Y, H:i') ?? '—' }}
+                        </p>
+                    @endif
                     @if ($approval1?->status === 'ditolak' && $approval1->catatan)
                         <p class="mt-1.5 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
                             <span class="font-medium">Catatan:</span> {{ $approval1->catatan }}
@@ -204,6 +209,11 @@
                             </span>
                         @endif
                     </div>
+                    @if ($approval2 && $approval2->status !== 'pending')
+                        <p class="mt-1 text-xs text-gray-400">
+                            Diproses pada: {{ $approval2->updated_at?->format('d F Y, H:i') ?? '—' }}
+                        </p>
+                    @endif
                     @if ($approval2?->status === 'ditolak' && $approval2->catatan)
                         <p class="mt-1.5 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
                             <span class="font-medium">Catatan:</span> {{ $approval2->catatan }}
@@ -216,7 +226,13 @@
     </div>
 
     {{-- Action Section --}}
-    @if ($myApproval)
+    @php
+        // Optimization 3: L2 approver cannot act until L1 is approved
+        $level1Approved = $approval1?->status === 'disetujui';
+        $blockedByLevel1 = $myApproval && $myApproval->level === 2 && ! $level1Approved;
+    @endphp
+
+    @if ($myApproval && ! $blockedByLevel1)
         <div class="bg-white rounded-2xl shadow px-6 py-6 mb-6">
             <h2 class="text-base font-bold text-gray-800 mb-1">Tindakan Anda</h2>
             <p class="text-sm text-gray-500 mb-5">
@@ -225,63 +241,77 @@
                 untuk pemesanan ini.
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex flex-col gap-6">
 
-                {{-- Approve Button --}}
+                {{-- Approve --}}
                 <form method="POST" action="{{ route('approvals.approve', $booking) }}"
-                      onsubmit="return confirm('Yakin ingin menyetujui pemesanan #{{ $booking->id }}?')"
-                      class="sm:flex-shrink-0">
+                      onsubmit="return confirm('Yakin ingin menyetujui pemesanan ini?')">
                     @csrf
                     <button type="submit"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg shadow transition-colors">
+                            class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg shadow transition-colors">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
-                        Setujui
+                        Setujui Pemesanan
                     </button>
                 </form>
 
-                {{-- Reject Form --}}
-                <form method="POST" action="{{ route('approvals.reject', $booking) }}" class="flex-1">
+                <div class="border-t border-gray-200"></div>
+
+                {{-- Reject — tombol disabled jika textarea masih kosong (Optimization 1) --}}
+                <form method="POST" action="{{ route('approvals.reject', $booking) }}"
+                      onsubmit="return confirm('Yakin ingin menolak pemesanan ini?')">
                     @csrf
                     <div class="flex flex-col gap-2">
                         <label for="catatan" class="text-sm font-medium text-gray-700">
-                            Catatan Penolakan <span class="text-red-500">*</span>
+                            Catatan Penolakan <span class="text-red-500">(Wajib)</span>
                         </label>
                         <textarea
                             id="catatan"
                             name="catatan"
                             rows="3"
                             maxlength="500"
-                            placeholder="Tuliskan alasan penolakan... (maks. 500 karakter)"
-                            class="block w-full rounded-lg border {{ $errors->has('catatan') ? 'border-red-400 bg-red-50' : 'border-gray-300' }} px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                            placeholder="Tuliskan alasan penolakan (maks 500 karakter)"
+                            oninput="toggleRejectBtn(this)"
+                            class="block w-full rounded-lg border {{ $errors->has('catatan') ? 'border-red-400 bg-red-50' : 'border-gray-300' }} px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition"
                         >{{ old('catatan') }}</textarea>
 
                         @error('catatan')
-                            <p class="text-xs text-red-600 flex items-center gap-1">
-                                <svg class="h-3.5 w-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                                {{ $message }}
-                            </p>
+                            <p class="text-xs text-red-600">{{ $message }}</p>
                         @enderror
 
-                        <div class="flex justify-end">
-                            <button type="submit"
-                                    onclick="return confirm('Yakin ingin menolak pemesanan #{{ $booking->id }}?')"
-                                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow transition-colors">
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                </svg>
-                                Tolak
-                            </button>
-                        </div>
+                        <button
+                            id="btn-tolak"
+                            type="submit"
+                            disabled
+                            class="w-full mt-2 inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg shadow transition-colors
+                                   bg-red-600 hover:bg-red-700 text-white
+                                   disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+                        >
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                            Tolak Pemesanan
+                        </button>
                     </div>
                 </form>
 
             </div>
         </div>
+
+    @elseif ($myApproval && $blockedByLevel1)
+        {{-- L2 approver: L1 belum selesai --}}
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl px-6 py-5 mb-6 flex items-start gap-3">
+            <svg class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-sm text-blue-800 font-medium">
+                Menunggu persetujuan Approver Level 1 terlebih dahulu sebelum Anda dapat mengambil tindakan.
+            </p>
+        </div>
+
     @else
+        {{-- Bukan approver, atau approval sudah diproses --}}
         <div class="bg-amber-50 border border-amber-200 rounded-2xl px-6 py-5 mb-6 flex items-start gap-3">
             <svg class="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
@@ -304,4 +334,23 @@
     </div>
 
 </div>
+
+{{-- Optimization 1: disable/enable reject button based on textarea content --}}
+<script>
+function toggleRejectBtn(textarea) {
+    const btn = document.getElementById('btn-tolak');
+    if (btn) {
+        btn.disabled = textarea.value.trim().length === 0;
+    }
+}
+
+// On page load: enable button if textarea already has content (e.g. after validation error)
+document.addEventListener('DOMContentLoaded', function () {
+    const textarea = document.getElementById('catatan');
+    const btn = document.getElementById('btn-tolak');
+    if (textarea && btn) {
+        btn.disabled = textarea.value.trim().length === 0;
+    }
+});
+</script>
 @endsection

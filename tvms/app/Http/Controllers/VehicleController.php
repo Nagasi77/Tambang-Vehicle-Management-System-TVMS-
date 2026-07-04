@@ -6,16 +6,31 @@ use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\Vehicle;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class VehicleController extends Controller
 {
     /**
-     * Display a paginated list of vehicles.
+     * Display a paginated list of vehicles with optional search and filter.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $vehicles = Vehicle::latest()->paginate(15);
+        $query = Vehicle::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('plat_nomor', 'like', "%{$search}%");
+        }
+
+        if ($jenis = $request->input('jenis')) {
+            $query->where('jenis', $jenis);
+        }
+
+        if ($kepemilikan = $request->input('status_kepemilikan')) {
+            $query->where('status_kepemilikan', $kepemilikan);
+        }
+
+        $vehicles = $query->latest()->paginate(15)->withQueryString();
 
         return view('vehicles.index', compact('vehicles'));
     }

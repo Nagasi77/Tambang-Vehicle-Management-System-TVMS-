@@ -68,6 +68,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Reports (filter form + Excel export)
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    // Jadwal Servis — ringkasan semua riwayat servis lintas kendaraan
+    Route::get('/services', [VehicleServiceController::class, 'allServices'])->name('services.index');
 });
 
 // -------------------------------------------------------------------------

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\BookingService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -17,13 +18,26 @@ class BookingController extends Controller
     public function __construct(private BookingService $bookingService) {}
 
     /**
-     * Daftar semua booking (admin) — paginate 15, eager load relasi.
+     * Daftar semua booking (admin) — paginate 15, eager load relasi, dengan search & filter.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $bookings = Booking::with(['vehicle', 'driver', 'approverLevel1', 'approverLevel2'])
-            ->latest()
-            ->paginate(15);
+        $query = Booking::with(['vehicle', 'driver', 'approverLevel1', 'approverLevel2'])
+            ->latest();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('vehicle', fn($v) => $v->where('plat_nomor', 'like', "%{$search}%"))
+                  ->orWhereHas('driver',  fn($d) => $d->where('nama_driver', 'like', "%{$search}%"))
+                  ->orWhere('keperluan', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('status_pembokingan', $status);
+        }
+
+        $bookings = $query->paginate(15)->withQueryString();
 
         return view('bookings.index', compact('bookings'));
     }

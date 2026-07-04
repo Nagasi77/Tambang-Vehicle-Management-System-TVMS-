@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'TVMS') — TVMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="min-h-screen bg-gray-100">
 
@@ -36,6 +37,11 @@
                                 <a href="{{ route('bookings.index') }}"
                                    class="hover:text-indigo-200 transition-colors {{ request()->routeIs('bookings*') ? 'text-white underline underline-offset-4' : 'text-indigo-100' }}">
                                     Pemesanan
+                                </a>
+                                {{-- Jadwal Servis — dropdown per kendaraan, atau halaman ringkasan --}}
+                                <a href="{{ route('services.index') }}"
+                                   class="hover:text-indigo-200 transition-colors {{ request()->routeIs('services*') || request()->routeIs('vehicles.services*') ? 'text-white underline underline-offset-4' : 'text-indigo-100' }}">
+                                    Jadwal Servis
                                 </a>
                                 <a href="{{ route('reports.index') }}"
                                    class="hover:text-indigo-200 transition-colors {{ request()->routeIs('reports*') ? 'text-white underline underline-offset-4' : 'text-indigo-100' }}">
@@ -100,5 +106,31 @@
         @yield('content')
     </main>
 
+    {{-- SweetAlert2 global delete handler --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-confirm-delete]').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const name  = form.dataset.confirmDelete || 'data ini';
+                    const self  = form;
+                    Swal.fire({
+                        title: 'Konfirmasi Hapus',
+                        html:  'Yakin ingin menghapus <strong>' + name + '</strong>?<br><small class="text-gray-500">Tindakan ini tidak dapat dibatalkan.</small>',
+                        icon:  'warning',
+                        showCancelButton:  true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor:  '#6b7280',
+                        confirmButtonText:  'Ya, Hapus',
+                        cancelButtonText:   'Batal',
+                    }).then(function (result) {
+                        if (result.isConfirmed) { self.submit(); }
+                    });
+                });
+            });
+        });
+    </script>
+
+    @stack('scripts')
 </body>
 </html>

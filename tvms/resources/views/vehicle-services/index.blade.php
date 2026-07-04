@@ -85,7 +85,7 @@
 
                                     <form method="POST"
                                           action="{{ route('vehicles.services.destroy', [$vehicle, $service]) }}"
-                                          onsubmit="return confirm('Yakin ingin menghapus riwayat servis ini?')">
+                                          data-confirm-delete="servis tanggal {{ $service->tanggal_service->format('d-m-Y') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

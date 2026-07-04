@@ -6,16 +6,27 @@ use App\Http\Requests\StoreDriverRequest;
 use App\Http\Requests\UpdateDriverRequest;
 use App\Models\Driver;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DriverController extends Controller
 {
     /**
-     * Display a paginated list of all drivers.
+     * Display a paginated list of all drivers with optional search and status filter.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $drivers = Driver::orderBy('nama_driver')->paginate(15);
+        $query = Driver::query();
+
+        if ($search = $request->input('search')) {
+            $query->where('nama_driver', 'like', "%{$search}%");
+        }
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        $drivers = $query->orderBy('nama_driver')->paginate(15)->withQueryString();
 
         return view('drivers.index', compact('drivers'));
     }
